@@ -48,7 +48,8 @@ const app = require('./app');
 在这些中间件中，有负责内容协商（content-negotation）、缓存控制（cache freshness）、反向代理（proxy support）与重定向等等功能的常用中间件（详见 [中间件](#%E4%B8%AD%E9%97%B4%E4%BB%B6middleware) 章节），但如前所述， Koa 内核并不会打包这些中间件，让我们先来看看 Koa 极其简单的 Hello World 应用程序：
 
 ````javascript
-var koa = require('koa');
+
+koa = require('koa');
 var app = koa();
 
 app.use(function *(){
@@ -87,13 +88,13 @@ Koa 中间件以一种非常传统的方式级联起来，你可能会非常熟�
 downstream，当没有下一个中间件执行 downstream 的时候，代码将会逆序执行。
 
 ````javascript
-var koa = require('koa');
-var app =new koa();
+const koa = require('koa');
+const app =new koa();
 
 // x-response-time
 app.use(async (ctx,next)=>{
   // (1) 进入路由
-  var start = Date.now();
+  const start = Date.now();
   await next;
   // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
   const ms = Date.now()- start;
@@ -107,7 +108,7 @@ app.use(async(ctx,next){
   const start = Date.now();
   await next;
   // (4) 再次进入 logger 中间件，记录2次通过此中间件「穿越」的时间
-  var ms = Date.now() - start;
+  const ms = Date.now() - start;
   console.log(`${ctx.method} ${ctx.url}, ${ms}`);
 });
 
