@@ -95,7 +95,7 @@ const app =new koa();
 app.use(async (ctx,next)=>{
   // (1) 进入路由
   const start = Date.now();
-  await next;
+  await next();
   // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
   const ms = Date.now()- start;
   ctx.set('X-Response-Time', `${ms}ms`);
@@ -106,7 +106,7 @@ app.use(async (ctx,next)=>{
 app.use(async(ctx,next){
   // (2) 进入 logger 中间件
   const start = Date.now();
-  await next;
+  await next();
   // (4) 再次进入 logger 中间件，记录2次通过此中间件「穿越」的时间
   const ms = Date.now() - start;
   console.log(`${ctx.method} ${ctx.url}, ${ms}`);
