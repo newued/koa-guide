@@ -97,7 +97,7 @@ app.use(async (ctx,next)=>{
   await next;
   // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
   const ms = Date.now()- start;
-  this.set('X-Response-Time', `${ms}ms`);
+  ctx.set('X-Response-Time', `${ms}ms`);
   // (6) 返回 this.body
 });
 
