@@ -61,8 +61,8 @@ app.listen(3000);
 如果使用Koa 2的话：
 
 ````javascript
-var Koa = require('koa');
-var app = new Koa();
+const Koa = require('koa');
+const app = new Koa();
 
 app.use(ctx => {
   ctx.body = 'Hello World';
@@ -88,33 +88,33 @@ downstream，当没有下一个中间件执行 downstream 的时候，代码将�
 
 ````javascript
 var koa = require('koa');
-var app = koa();
+var app =new koa();
 
 // x-response-time
-app.use(function *(next){
+app.use(async (ctx,next)=>{
   // (1) 进入路由
-  var start = new Date;
-  yield next;
+  var start = Date.now();
+  await next;
   // (5) 再次进入 x-response-time 中间件，记录2次通过此中间件「穿越」的时间
-  var ms = new Date - start;
-  this.set('X-Response-Time', ms + 'ms');
+  const ms = Date.now()- start;
+  this.set('X-Response-Time', `${ms}ms`);
   // (6) 返回 this.body
 });
 
 // logger
-app.use(function *(next){
+app.use(async(ctx,next){
   // (2) 进入 logger 中间件
-  var start = new Date;
-  yield next;
+  const start = Date.now();
+  await next;
   // (4) 再次进入 logger 中间件，记录2次通过此中间件「穿越」的时间
-  var ms = new Date - start;
-  console.log('%s %s - %s', this.method, this.url, ms);
+  var ms = Date.now() - start;
+  console.log(`${ctx.method} ${ctx.url}, ${ms}`);
 });
 
 // response
-app.use(function *(){
+app.use(async ctx=>{
   // (3) 进入 response 中间件，没有捕获到下一个符合条件的中间件，传递到 upstream
-  this.body = 'Hello World';
+  ctx.body = 'Hello World';
 });
 
 app.listen(3000);
@@ -130,7 +130,7 @@ app.listen(3000);
     // (2) do some other stuff
     .middleware3 {
       // (3) NO next yield !
-      // this.body = 'hello world'
+      // ctx.body = 'hello world'
     }
     // (4) do some other stuff later
   }
@@ -182,17 +182,17 @@ app.listen(3000);
 用于启动一个服务的快捷方法，以下范例代码在 3000 端口启动了一个空服务：
 
 ````javascript
-var koa = require('koa');
-var app = koa();
+const koa = require('koa');
+const app =new koa();
 
 app.listen(3000);
 ````
 app.listen 是 http.createServer 的简单包装，它实际上这样运行：
 
 ````javascript
-var http = require('http');
-var koa = require('koa');
-var app = koa();
+const http = require('http');
+const koa = require('koa');
+const app =new koa();
 
 http.createServer(app.callback()).listen(3000);
 ````
@@ -200,9 +200,9 @@ http.createServer(app.callback()).listen(3000);
 如果有需要，你可以在多个端口上启动一个 app，比如同时支持 HTTP 和 HTTPS：
 
 ````javascript
-var http = require('http');
-var koa = require('koa');
-var app = koa();
+const http = require('http');
+const koa = require('koa');
+const app = koa();
 
 http.createServer(app.callback()).listen(3000);
 http.createServer(app.callback()).listen(3001);
@@ -260,9 +260,9 @@ Koa 的上下文封装了 request 与 response 对象至一个对象中，并提
 
 ````javascript
 app.use(function *(){
-  this; // 上下文对象
-  this.request; // Request 对象
-  this.response; // Response 对象
+  ctx; // 上下文对象
+  ctx.request; // Request 对象
+  ctx.response; // Response 对象
 });
 ````
 为了使用方便，许多上下文属性和方法都被委托代理到他们的 `ctx.request` 或 `ctx.response`，比如访问 `ctx.type` 和 `ctx.length` 将被代理到 `response` 对象，`ctx.path` 和 `ctx.method` 将被代理到 `request` 对象。
@@ -344,16 +344,16 @@ ctx.response 对象包括以下属性和别名方法，详见 [Response](#respon
 以下几种写法都有效：
 
 ````javascript
-this.throw(403)
-this.throw('name required', 400)
-this.throw(400, 'name required')
-this.throw('something exploded')
+ctx.throw(403)
+ctx.throw('name required', 400)
+ctx.throw(400, 'name required')
+ctx.throw('something exploded')
 ````
 
 实际上，`this.throw('name required', 400)` 是此代码片段的简写方法：
 
 ````javascript
-var err = new Error('name required');
+const err = new Error('name required');
 err.status = 400;
 throw err;
 ````
@@ -427,7 +427,7 @@ ctx.request 对象是对 Node 原生请求对象的抽象包装，提供了一�
 返回 req 对象的 `Content-Type`，不包括 `charset` 属性，范例代码：
 
 ````javascript
-var ct = this.type;
+const ct = this.type;
 // => "image/png"
 ````
 
@@ -449,7 +449,7 @@ var ct = this.type;
 设置给定的对象为查询对象。范例代码如下：
 
 ````javascript
-this.query = { next: '/login' };
+ctx.query = { next: '/login' };
 ````
 
 #### req.fresh
@@ -457,16 +457,16 @@ this.query = { next: '/login' };
 检查客户端请求的缓存是否是最新。当缓存为最新时，可编写业务逻辑直接返回 `304`，范例代码如下：
 
 ````javascript
-this.set('ETag', '123');
+ctx.set('ETag', '123');
 
 // 当客户端缓存是最新时
-if (this.fresh) {
-  this.status = 304;
+if (ctx.fresh) {
+  ctx.status = 304;
   return;
 }
 
 // 当客户端缓存已过期时，返回最新的数据
-this.body = yield db.find('something');
+ctx.body = yield db.find('something');
 ````
 
 #### req.stale
@@ -503,22 +503,22 @@ this.body = yield db.find('something');
 
 ````javascript
 // 客户端 Content-Type: text/html; charset=utf-8
-this.is('html'); // => 'html'
-this.is('text/html'); // => 'text/html'
-this.is('text/*', 'text/html'); // => 'text/html'
+ctx.is('html'); // => 'html'
+ctx.is('text/html'); // => 'text/html'
+ctx.is('text/*', 'text/html'); // => 'text/html'
 
 // 客户端 Content-Type 为 application/json 时：
-this.is('json', 'urlencoded'); // => 'json'
-this.is('application/json'); // => 'application/json'
-this.is('html', 'application/*'); // => 'application/json'
+ctx.is('json', 'urlencoded'); // => 'json'
+ctx.is('application/json'); // => 'application/json'
+ctx.is('html', 'application/*'); // => 'application/json'
 
-this.is('html'); // => false
+ctx.is('html'); // => false
 ````
 
 又如，下方的代码使用 `req.is(type)`，仅当请求类型为图片时才进行操作：
 
 ````javascript
-if (this.is('image/*')) {
+if (ctx.is('image/*')) {
   // process
 } else {
   this.throw(415, 'images only!');
@@ -531,27 +531,27 @@ if (this.is('image/*')) {
 
 ````javascript
 // Accept: text/html
-this.accepts('html');
+ctx.accepts('html');
 // => "html"
 
 // Accept: text/*, application/json
-this.accepts('html');
+ctx.accepts('html');
 // => "html"
-this.accepts('text/html');
+ctx.accepts('text/html');
 // => "text/html"
-this.accepts('json', 'text');
+ctx.accepts('json', 'text');
 // => "json"
-this.accepts('application/json');
+ctx.accepts('application/json');
 // => "application/json"
 
 // Accept: text/*, application/json
-this.accepts('image/png');
-this.accepts('png');
+ctx.accepts('image/png');
+ctx.accepts('png');
 // => undefined
 
 // Accept: text/*;q=.5, application/json
-this.accepts(['html', 'json']);
-this.accepts('html', 'json');
+ctx.accepts(['html', 'json']);
+ctx.accepts('html', 'json');
 // => "json"
 ````
 
@@ -563,10 +563,10 @@ this.accepts('html', 'json');
 
 ````javascript
 // Accept-Encoding: gzip
-this.acceptsEncodings('gzip', 'deflate');
+ctx.acceptsEncodings('gzip', 'deflate');
 // => "gzip"
 
-this.acceptsEncodings(['gzip', 'deflate']);
+ctx.acceptsEncodings(['gzip', 'deflate']);
 // => "gzip"
 ````
 
@@ -574,7 +574,7 @@ this.acceptsEncodings(['gzip', 'deflate']);
 
 ````javascript
 // Accept-Encoding: gzip, deflate
-this.acceptsEncodings();
+ctx.acceptsEncodings();
 // => ["gzip", "deflate"]
 ````
 
@@ -701,7 +701,7 @@ this.acceptsEncodings();
 获取指定的返回头属性，属性名称区分大小写。
 
 ````javascript
-var etag = this.get('ETag');
+const etag = this.get('ETag');
 ````
 
 #### res.set(field, value)
@@ -709,7 +709,7 @@ var etag = this.get('ETag');
 使用给定的参数设置一个返回头属性：
 
 ````javascript
-this.set('Cache-Control', 'no-cache');
+ctx.set('Cache-Control', 'no-cache');
 ````
 
 #### res.set(fields)
@@ -717,7 +717,7 @@ this.set('Cache-Control', 'no-cache');
 使用给定的对象一次设置多个返回头属性：
 
 ````javascript
-this.set({
+ctx.set({
   'Etag': '1234',
   'Last-Modified': date
 });
@@ -732,7 +732,7 @@ this.set({
 获取返回头中的 Content-Type，不包括 `"charset"` 等属性。
 
 ````javascript
-var ct = this.type;
+const ct = this.type;
 // => "image/png"
 ````
 
@@ -741,10 +741,10 @@ var ct = this.type;
 使用字符串或者文件后缀设定返回的 Content-Type
 
 ````javascript
-this.type = 'text/plain; charset=utf-8';
-this.type = 'image/png';
-this.type = '.png';
-this.type = 'png';
+ctx.type = 'text/plain; charset=utf-8';
+ctx.type = 'image/png';
+ctx.type = '.png';
+ctx.type = 'png';
 ````
 
 注意：当使用文件后缀指定时，koa 会默认设置好最匹配的编码字符集，比如当设定 `res.type = 'html'` 时，koa 会默认使用 `"utf-8"` 字符集。但当明确使用 `res.type = 'text/html'` 指定时，koa 不会自动设定字符集。
@@ -754,17 +754,17 @@ this.type = 'png';
 返回一个 `302` 跳转到给定的 url，您也可以使用关键词 `back` 来跳转到该 url 的上一个页面（refer），当没有上一个页面时，默认会跳转到 '/'
 
 ````javascript
-this.redirect('back');
-this.redirect('back', '/index.html');
-this.redirect('/login');
-this.redirect('http://google.com');
+ctx.redirect('back');
+ctx.redirect('back', '/index.html');
+ctx.redirect('/login');
+ctx.redirect('http://google.com');
 ````
 如果你需要覆盖 `302` 状态码，并在跳转时返回一些文案，可以这样做：
 
 ````javascript
-this.status = 301;
-this.redirect('/cart');
-this.body = 'Redirecting to shopping cart';
+ctx.status = 301;
+ctx.redirect('/cart');
+ctx.body = 'Redirecting to shopping cart';
 ````
 
 #### res.attachment([filename])
@@ -784,7 +784,7 @@ this.body = 'Redirecting to shopping cart';
 设置返回头中的 Last-Modified 属性，可以使用时间对象或者时间字符串。
 
 ````javascript
-this.response.lastModified = new Date();
+ctx.response.lastModified = new Date();
 ````
 
 #### res.etag=
@@ -792,7 +792,7 @@ this.response.lastModified = new Date();
 设置返回头的 Etag 字段。koa 不提供关于 Etag 的获取方法。
 
 ````javascript
-this.response.etag = crypto.createHash('md5').update(this.body).digest('hex');
+ctx.response.etag = crypto.createHash('md5').update(this.body).digest('hex');
 ````
 
 ---
